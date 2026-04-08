@@ -1,4 +1,4 @@
-package com.flytrack.sof3;
+package com.flytrack;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
