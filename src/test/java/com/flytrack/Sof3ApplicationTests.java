@@ -1,4 +1,4 @@
-package com.flytrack.sof3;
+package com.flytrack;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

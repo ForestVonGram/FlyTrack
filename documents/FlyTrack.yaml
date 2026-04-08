@@ -1,0 +1,846 @@
+openapi: 3.0.3
+info:
+  title: FlyTrack API
+  description: API para gestión de vuelos, reservas, equipaje y notificaciones.
+  version: 1.0.0
+  contact:
+    name: Soporte FlyTrack
+    email: soporte@flytrack.com
+
+servers:
+  - url: https://api.flytrack.com/api/v1
+    description: Servidor de producción
+  - url: http://localhost:8080/api/v1
+    description: Servidor local de desarrollo
+
+paths:
+  # ==================== AUTH ====================
+  /auth/register:
+    post:
+      summary: Registrar un nuevo usuario
+      operationId: register
+      tags:
+        - Autenticación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequestDTO'
+      responses:
+        '200':
+          description: Usuario registrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseDTO'
+
+  /auth/login:
+    post:
+      summary: Iniciar sesión
+      operationId: login
+      tags:
+        - Autenticación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequestDTO'
+      responses:
+        '200':
+          description: Login exitoso, retorna token JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseDTO'
+
+  # ==================== BAGGAGE ====================
+  /baggage:
+    post:
+      summary: Registrar nuevo equipaje
+      operationId: registerBaggage
+      tags:
+        - Equipaje
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BaggageRequestDTO'
+      responses:
+        '201':
+          description: Equipaje registrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaggageResponseDTO'
+
+  /baggage/{id}/estado:
+    patch:
+      summary: Actualizar estado del equipaje
+      operationId: updateStatus
+      tags:
+        - Equipaje
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID del equipaje
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Nuevo estado (ej. REGISTRADO, EN_VUELO, ENTREGADO)
+      responses:
+        '200':
+          description: Estado actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaggageResponseDTO'
+
+  /baggage/tracking/{codigoSeguimiento}:
+    get:
+      summary: Obtener equipaje por código de seguimiento
+      operationId: getBaggageByTrackingCode
+      tags:
+        - Equipaje
+      parameters:
+        - name: codigoSeguimiento
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Código único de seguimiento
+      responses:
+        '200':
+          description: Equipaje encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaggageResponseDTO'
+
+  /baggage/{id}/lost:
+    patch:
+      summary: Reportar equipaje como perdido
+      operationId: reportLost
+      tags:
+        - Equipaje
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID del equipaje
+      responses:
+        '200':
+          description: Equipaje marcado como perdido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaggageResponseDTO'
+
+  # ==================== BOOKINGS ====================
+  /bookings:
+    post:
+      summary: Crear una nueva reserva
+      operationId: createBooking
+      tags:
+        - Reservas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequestDTO'
+      responses:
+        '201':
+          description: Reserva creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponseDTO'
+
+  /bookings/{id}/cancel:
+    delete:
+      summary: Cancelar una reserva
+      operationId: cancelBooking
+      tags:
+        - Reservas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Reserva cancelada (sin contenido)
+
+  /bookings/{id}:
+    get:
+      summary: Obtener reserva por ID
+      operationId: getBookingById
+      tags:
+        - Reservas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Reserva encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponseDTO'
+
+  /bookings/passenger/{passengerId}:
+    get:
+      summary: Obtener reservas de un pasajero
+      operationId: getBookingsByPassenger
+      tags:
+        - Reservas
+      parameters:
+        - name: passengerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Lista de reservas del pasajero
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookingResponseDTO'
+
+  /bookings/flight/{flightId}:
+    get:
+      summary: Obtener reservas de un vuelo
+      operationId: getBookingsByFlight
+      tags:
+        - Reservas
+      parameters:
+        - name: flightId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Lista de reservas del vuelo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookingResponseDTO'
+
+  # ==================== FLIGHTS ====================
+  /flights:
+    post:
+      summary: Crear un nuevo vuelo
+      operationId: createFlight
+      tags:
+        - Vuelos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlightRequestDTO'
+      responses:
+        '201':
+          description: Vuelo creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlightResponseDTO'
+    get:
+      summary: Obtener todos los vuelos o filtrar por estado
+      operationId: getAllFlights
+      tags:
+        - Vuelos
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Estado del vuelo (ej. PROGRAMADO, EN_VUELO, ATERRIZADO)
+      responses:
+        '200':
+          description: Lista de vuelos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FlightResponseDTO'
+
+  /flights/search:
+    get:
+      summary: Buscar vuelos por origen y destino
+      operationId: searchFlights
+      tags:
+        - Vuelos
+      parameters:
+        - name: origen
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: destino
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Vuelos encontrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FlightResponseDTO'
+
+  /flights/{id}:
+    put:
+      summary: Actualizar vuelo existente
+      operationId: updateFlight
+      tags:
+        - Vuelos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlightRequestDTO'
+      responses:
+        '200':
+          description: Vuelo actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlightResponseDTO'
+    delete:
+      summary: Eliminar vuelo
+      operationId: deleteFlight
+      tags:
+        - Vuelos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Vuelo eliminado
+    get:
+      summary: Obtener vuelo por ID
+      operationId: getFlightById
+      tags:
+        - Vuelos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Vuelo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlightResponseDTO'
+
+  /flights/{id}/estado:
+    patch:
+      summary: Cambiar estado de un vuelo
+      operationId: changeStatus
+      tags:
+        - Vuelos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: estado
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Nuevo estado (PROGRAMADO, EN_VUELO, ATERRIZADO, CANCELADO)
+      responses:
+        '200':
+          description: Estado actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlightResponseDTO'
+
+  /flights/{id}/puerta:
+    patch:
+      summary: Actualizar puerta de embarque
+      operationId: updateGate
+      tags:
+        - Vuelos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: puerta
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Número de puerta (ej. B23)
+      responses:
+        '200':
+          description: Puerta actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlightResponseDTO'
+
+  # ==================== NOTIFICATIONS ====================
+  /notifications/passenger/{passengerId}:
+    get:
+      summary: Obtener todas las notificaciones de un pasajero
+      operationId: getAllNotifications
+      tags:
+        - Notificaciones
+      parameters:
+        - name: passengerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Lista de notificaciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationResponseDTO'
+
+  /notifications/passenger/{passengerId}/unread:
+    get:
+      summary: Obtener notificaciones no leídas
+      operationId: getUnreadNotifications
+      tags:
+        - Notificaciones
+      parameters:
+        - name: passengerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Notificaciones no leídas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationResponseDTO'
+
+  /notifications/{id}/read:
+    patch:
+      summary: Marcar notificación como leída
+      operationId: markAsRead
+      tags:
+        - Notificaciones
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Notificación marcada como leída
+
+  # ==================== PASSENGERS ====================
+  /passengers:
+    post:
+      summary: Registrar un nuevo pasajero
+      operationId: createPassenger
+      tags:
+        - Pasajeros
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PassengerRequestDTO'
+      responses:
+        '201':
+          description: Pasajero creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PassengerResponseDTO'
+    get:
+      summary: Listar todos los pasajeros
+      operationId: getAllPassengers
+      tags:
+        - Pasajeros
+      responses:
+        '200':
+          description: Lista de pasajeros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PassengerResponseDTO'
+
+  /passengers/{id}:
+    put:
+      summary: Actualizar datos de un pasajero
+      operationId: updatePassenger
+      tags:
+        - Pasajeros
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PassengerRequestDTO'
+      responses:
+        '200':
+          description: Pasajero actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PassengerResponseDTO'
+    get:
+      summary: Obtener pasajero por ID
+      operationId: getPassengerById
+      tags:
+        - Pasajeros
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Pasajero encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PassengerResponseDTO'
+
+components:
+  schemas:
+    AuthRequestDTO:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+
+    AuthResponseDTO:
+      type: object
+      properties:
+        token:
+          type: string
+        username:
+          type: string
+        role:
+          type: string
+
+    BaggageRequestDTO:
+      type: object
+      required:
+        - bookingId
+        - weight
+      properties:
+        bookingId:
+          type: integer
+          format: int64
+          description: ID de la reserva asociada
+        weight:
+          type: number
+          format: double
+          minimum: 0
+          exclusiveMinimum: true
+          description: Peso del equipaje en kg
+      example:
+        bookingId: 1001
+        weight: 15.5
+
+    BaggageResponseDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        trackingCode:
+          type: string
+        weight:
+          type: number
+          format: double
+        status:
+          type: string
+        booking:
+          $ref: '#/components/schemas/BookingSummaryDTO'
+
+    BookingRequestDTO:
+      type: object
+      required:
+        - passengerId
+        - flightId
+        - bookingClass
+      properties:
+        passengerId:
+          type: integer
+          format: int64
+        flightId:
+          type: integer
+          format: int64
+        seatNumber:
+          type: string
+          maxLength: 10
+        bookingClass:
+          type: string
+          description: Clase de reserva (ECONOMY, BUSINESS, FIRST)
+
+    BookingResponseDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        passenger:
+          $ref: '#/components/schemas/PassengerSummaryDTO'
+        flight:
+          $ref: '#/components/schemas/FlightSummaryDTO'
+        seatNumber:
+          type: string
+        bookingClass:
+          type: string
+        status:
+          type: string
+        bookingDate:
+          type: string
+          format: date-time
+
+    BookingSummaryDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        seatNumber:
+          type: string
+        bookingClass:
+          type: string
+
+    FlightRequestDTO:
+      type: object
+      required:
+        - flightCode
+        - origin
+        - destination
+        - departureTime
+        - estimatedArrivalTime
+        - status
+        - airline
+      properties:
+        flightCode:
+          type: string
+          maxLength: 20
+        origin:
+          type: string
+          maxLength: 100
+        destination:
+          type: string
+          maxLength: 100
+        departureTime:
+          type: string
+          format: date-time
+          description: Fecha y hora de salida (futuro)
+        estimatedArrivalTime:
+          type: string
+          format: date-time
+          description: Fecha y hora estimada de llegada (futuro)
+        status:
+          type: string
+          description: Estado del vuelo
+        gate:
+          type: string
+          maxLength: 10
+        airline:
+          type: string
+          maxLength: 100
+
+    FlightResponseDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        flightCode:
+          type: string
+        origin:
+          type: string
+        destination:
+          type: string
+        departureTime:
+          type: string
+          format: date-time
+        estimatedArrivalTime:
+          type: string
+          format: date-time
+        status:
+          type: string
+        gate:
+          type: string
+        airline:
+          type: string
+
+    FlightSummaryDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        flightCode:
+          type: string
+        origin:
+          type: string
+        destination:
+          type: string
+        status:
+          type: string
+        gate:
+          type: string
+
+    NotificationResponseDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        message:
+          type: string
+        type:
+          type: string
+        notificationTime:
+          type: string
+          format: date-time
+        read:
+          type: boolean
+        flight:
+          $ref: '#/components/schemas/FlightSummaryDTO'
+
+    PassengerRequestDTO:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - identityDocument
+        - phoneNumber
+      properties:
+        firstName:
+          type: string
+          maxLength: 100
+        lastName:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          maxLength: 150
+        identityDocument:
+          type: string
+          maxLength: 50
+        phoneNumber:
+          type: string
+          maxLength: 20
+
+    PassengerResponseDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+
+    PassengerSummaryDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        identityDocument:
+          type: string
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+# Si tu API requiere autenticación, descomenta la siguiente línea y añade `security:` a nivel global o por endpoint.
+# security:
+#   - bearerAuth: []
