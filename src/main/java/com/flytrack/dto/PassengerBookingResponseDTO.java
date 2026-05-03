@@ -1,15 +1,17 @@
 package com.flytrack.dto;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
+
 import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PassengerResponseDTO {
+public class PassengerBookingResponseDTO {
     private Long id;
     private String firstName;
     private String lastName;
@@ -17,7 +19,6 @@ public class PassengerResponseDTO {
     private String identityDocument;
     private String phoneNumber;
     private String seatNumber;
-    private List<BaggageResponseDTO> baggages;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private List<BaggageSummaryDTO> baggages;
 }
+

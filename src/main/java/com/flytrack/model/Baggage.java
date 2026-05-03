@@ -22,8 +22,8 @@ public class Baggage {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "booking_id", nullable = false)
-    private Booking booking;
+    @JoinColumn(name = "passenger_id", nullable = false)
+    private Passenger passenger;
 
     @Column(name = "tracking_code", nullable = false, length = 50, unique = true)
     private String trackingCode;

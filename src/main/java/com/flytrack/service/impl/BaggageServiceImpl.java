@@ -2,14 +2,12 @@ package com.flytrack.service.impl;
 
 import com.flytrack.dto.BaggageRequestDTO;
 import com.flytrack.dto.BaggageResponseDTO;
-import com.flytrack.exception.BusinessException;
-import com.flytrack.exception.ResourceNotFoundException;
 import com.flytrack.mapper.BaggageMapper;
 import com.flytrack.model.Baggage;
-import com.flytrack.model.Booking;
+import com.flytrack.model.Passenger;
 import com.flytrack.model.enums.BaggageStatus;
 import com.flytrack.repository.BaggageRepository;
-import com.flytrack.repository.BookingRepository;
+import com.flytrack.repository.PassengerRepository;
 import com.flytrack.service.BaggageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,59 +20,45 @@ import java.util.UUID;
 public class BaggageServiceImpl implements BaggageService {
 
     private final BaggageRepository baggageRepository;
-    private final BookingRepository bookingRepository;
+    private final PassengerRepository passengerRepository;
     private final BaggageMapper baggageMapper;
 
     @Override
     @Transactional
-    public BaggageResponseDTO registerBaggage(BaggageRequestDTO dto) {
-        Booking booking = bookingRepository.findById(dto.getBookingId())
-                .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada: " + dto.getBookingId()));
+    public BaggageResponseDTO registerBaggage(BaggageRequestDTO req) {
+        Passenger passenger = passengerRepository.findById(req.getPassengerId())
+                .orElseThrow(() -> new RuntimeException("Passenger not found"));
 
-        Baggage baggage = Baggage.builder()
-                .booking(booking)
-                .trackingCode(UUID.randomUUID().toString())
-                .weight(dto.getWeight())
-                .status(BaggageStatus.REGISTRADO)
-                .build();
+        Baggage baggage = baggageMapper.toEntity(req);
+        baggage.setPassenger(passenger);
+        baggage.setTrackingCode(UUID.randomUUID().toString());
+        baggage.setStatus(BaggageStatus.REGISTRADO);
 
-        Baggage savedBaggage = baggageRepository.save(baggage);
-        return baggageMapper.toResponseDTO(savedBaggage);
+        return baggageMapper.toResponseDTO(baggageRepository.save(baggage));
     }
 
     @Override
     @Transactional
     public BaggageResponseDTO updateStatus(String trackingCode, String status) {
         Baggage baggage = baggageRepository.findByTrackingCode(trackingCode)
-                .orElseThrow(() -> new ResourceNotFoundException("Equipaje no encontrado con código: " + trackingCode));
-
-        try {
-            baggage.setStatus(BaggageStatus.valueOf(status));
-        } catch (IllegalArgumentException e) {
-            throw new BusinessException("Estado de equipaje inválido: " + status);
-        }
-
-        Baggage updatedBaggage = baggageRepository.save(baggage);
-        return baggageMapper.toResponseDTO(updatedBaggage);
+                .orElseThrow(() -> new RuntimeException("Baggage not found"));
+        baggage.setStatus(BaggageStatus.valueOf(status));
+        return baggageMapper.toResponseDTO(baggageRepository.save(baggage));
     }
 
     @Override
-    @Transactional(readOnly = true)
     public BaggageResponseDTO getBaggageByTrackingCode(String trackingCode) {
-        Baggage baggage = baggageRepository.findByTrackingCode(trackingCode)
-                .orElseThrow(() -> new ResourceNotFoundException("Equipaje no encontrado con código: " + trackingCode));
-        return baggageMapper.toResponseDTO(baggage);
+        return baggageRepository.findByTrackingCode(trackingCode)
+                .map(baggageMapper::toResponseDTO)
+                .orElseThrow(() -> new RuntimeException("Baggage not found"));
     }
 
     @Override
     @Transactional
     public BaggageResponseDTO reportLost(String trackingCode) {
         Baggage baggage = baggageRepository.findByTrackingCode(trackingCode)
-                .orElseThrow(() -> new ResourceNotFoundException("Equipaje no encontrado con código: " + trackingCode));
-
+                .orElseThrow(() -> new RuntimeException("Baggage not found"));
         baggage.setStatus(BaggageStatus.PERDIDO);
-        Baggage updatedBaggage = baggageRepository.save(baggage);
-        return baggageMapper.toResponseDTO(updatedBaggage);
+        return baggageMapper.toResponseDTO(baggageRepository.save(baggage));
     }
 }
-

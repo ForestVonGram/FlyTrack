@@ -132,7 +132,12 @@ public class FlightServiceImpl implements FlightService {
             String message = "El vuelo " + flight.getFlightCode() + " ha cambiado su estado a " + status;
 
             for (Booking booking : bookings) {
-                notificationService.createNotification(booking.getPassenger().getId(), flight.getId(), message, type);
+                if (booking.getUser() != null) {
+                    notificationService.createUserNotification(booking.getUser().getId(), message, type);
+                }
+                for (com.flytrack.model.Passenger passenger : booking.getPassengers()) {
+                    notificationService.createNotification(passenger.getId(), flight.getId(), message, type);
+                }
             }
         }
 
@@ -152,10 +157,14 @@ public class FlightServiceImpl implements FlightService {
         String message = "El vuelo " + flight.getFlightCode() + " ha actualizado su puerta de embarque a: " + gate;
 
         for (Booking booking : bookings) {
-            notificationService.createNotification(booking.getPassenger().getId(), flight.getId(), message, NotificationType.CAMBIO_PUERTA);
+            if (booking.getUser() != null) {
+                notificationService.createUserNotification(booking.getUser().getId(), message, NotificationType.CAMBIO_PUERTA);
+            }
+            for (com.flytrack.model.Passenger passenger : booking.getPassengers()) {
+                notificationService.createNotification(passenger.getId(), flight.getId(), message, NotificationType.CAMBIO_PUERTA);
+            }
         }
 
         return flightMapper.toResponseDTO(updatedFlight);
     }
 }
-

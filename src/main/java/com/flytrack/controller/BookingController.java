@@ -2,6 +2,8 @@ package com.flytrack.controller;
 
 import com.flytrack.dto.BookingRequestDTO;
 import com.flytrack.dto.BookingResponseDTO;
+import com.flytrack.dto.BookingPassengerRequestDTO;
+import com.flytrack.dto.FlightSummaryDTO;
 import com.flytrack.service.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,18 @@ public class BookingController {
         return bookingService.createBooking(dto);
     }
 
+    @PostMapping("/me")
+    @ResponseStatus(HttpStatus.CREATED)
+    public BookingResponseDTO createBookingForPassenger(@Valid @RequestBody BookingPassengerRequestDTO dto) {
+        return bookingService.createBookingForCurrentPassenger(dto);
+    }
+
+    @DeleteMapping("/me/{id}/cancel")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelMyBooking(@PathVariable Long id) {
+        bookingService.cancelBookingForCurrentPassenger(id);
+    }
+
     @DeleteMapping("/{id}/cancel")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void cancelBooking(@PathVariable Long id) {
@@ -37,6 +51,16 @@ public class BookingController {
     @GetMapping("/passenger/{passengerId}")
     public List<BookingResponseDTO> getBookingsByPassenger(@PathVariable Long passengerId) {
         return bookingService.getBookingsByPassenger(passengerId);
+    }
+
+    @GetMapping("/me")
+    public List<BookingResponseDTO> getMyBookings() {
+        return bookingService.getBookingsForCurrentPassenger();
+    }
+
+    @GetMapping("/me/flights")
+    public List<FlightSummaryDTO> getMyFlights() {
+        return bookingService.getFlightsForCurrentPassenger();
     }
 
     @GetMapping("/flight/{flightId}")

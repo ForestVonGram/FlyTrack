@@ -1,8 +1,10 @@
 package com.flytrack.controller;
 
 import com.flytrack.dto.AuthRequestDTO;
+import com.flytrack.dto.AuthRegisterRequestDTO;
 import com.flytrack.dto.AuthResponseDTO;
 import com.flytrack.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,14 +21,14 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> register(
-            @RequestBody AuthRequestDTO request
+            @Valid @RequestBody AuthRegisterRequestDTO request
     ) {
         return ResponseEntity.ok(service.register(request));
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(
-            @RequestBody AuthRequestDTO request
+            @Valid @RequestBody AuthRequestDTO request
     ) {
         return ResponseEntity.ok(service.login(request));
     }

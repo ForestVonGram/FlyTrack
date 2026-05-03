@@ -13,7 +13,7 @@ public interface BaggageRepository extends JpaRepository<Baggage, Long> {
 
     Optional<Baggage> findByTrackingCode(String trackingCode);
 
-    List<Baggage> findByBookingId(Long bookingId);
+    List<Baggage> findByPassengerId(Long bookingId);
 
     List<Baggage> findByStatus(BaggageStatus status);
 }

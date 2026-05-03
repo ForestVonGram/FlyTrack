@@ -12,13 +12,12 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BookingRequestDTO {
-    private Long userId; // Optional admin usage
+public class BookingPassengerRequestDTO {
     @NotNull(message = "El vuelo es obligatorio")
     private Long flightId;
     @NotBlank(message = "La clase de reserva es obligatoria")
     private String bookingClass;
     @NotEmpty(message = "Debe haber al menos un pasajero en la reserva")
     @Valid
-    private List<PassengerBookingRequestDTO> passengers;
+    private List<PassengerBookingRequestDTO> passengers; // Contains seat and baggages
 }
